@@ -5,7 +5,7 @@
   "description": "Test RDBMS behaviors",
   "main": "dist/index.mjs",
   "scripts": {
-    "start": "tsx src/index.tsx",
+    "start": "tsx src/index.mts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
