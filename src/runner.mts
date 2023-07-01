@@ -1,5 +1,5 @@
-import { Test } from "./parser.mjs";
-import { type RDBMS } from "./rdbms.mjs";
+import type { Test } from "./parser.mjs";
+import type { RDBMS } from "./rdbms.mjs";
 
 async function runTest(database: RDBMS, test: Test): Promise<void> {
   if (test.engine !== database.engine) {
@@ -9,7 +9,7 @@ async function runTest(database: RDBMS, test: Test): Promise<void> {
   await database.clear();
   await database.exec(test.setupSQL);
 
-  for (const { name, sql, expected } of test.cases) {
+  for (const { resetAfterRun, name, sql, expected } of test.cases) {
     try {
       await database.transaction(async (query) => {
         let erred: boolean | Error = false;
@@ -48,6 +48,11 @@ async function runTest(database: RDBMS, test: Test): Promise<void> {
         throw new Error("rollback");
       });
     } catch {}
+
+    if (resetAfterRun) {
+      await database.clear();
+      await database.exec(test.setupSQL);
+    }
   }
 }
 

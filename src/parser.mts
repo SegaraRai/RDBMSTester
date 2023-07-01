@@ -4,6 +4,7 @@ export type Expected = "success" | "error" | (string | number | boolean)[];
 
 export interface TestCase {
   name: string;
+  resetAfterRun: boolean;
   sql: string;
   expected: Expected;
 }
@@ -148,6 +149,7 @@ export function parseTest(
       let name = `test_${index + 1}`;
       const caseReplacements: [string, string][] = [];
       let expected: Expected = "success";
+      let resetAfterRun = false;
       for (const line of testCase.split("\n")) {
         const directive = parseDirective(line);
         if (!directive) {
@@ -174,6 +176,10 @@ export function parseTest(
             expected = parseExpected(directive.args);
             break;
 
+          case "reset":
+            resetAfterRun = true;
+            break;
+
           case "skip":
             return null;
         }
@@ -181,6 +187,7 @@ export function parseTest(
 
       return {
         name,
+        resetAfterRun,
         expected,
         sql: processReplacements(removeDirectives(testCase), [
           ...schemaReplacements,
