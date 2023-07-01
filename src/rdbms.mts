@@ -8,7 +8,7 @@ export type RDBMS = {
   clear: () => Promise<void>;
   transaction: (
     callback: (query: (sql: string) => Promise<unknown[]>) => Promise<void>
-  ) => void;
+  ) => Promise<void>;
   exec: (sql: string) => Promise<void>;
   query: (sql: string) => Promise<unknown[]>;
   dispose?: () => Promise<void>;
@@ -16,6 +16,7 @@ export type RDBMS = {
 
 function splitStatements(sql: string): string[] {
   return sql
+    .replace(/;\s*$/, '')
     .split(/;[ \t]*\r?\n/)
     .filter((statement) => /\S/.test(statement))
     .map((statement) => `${statement};`);
@@ -84,6 +85,14 @@ export async function createSQLite3(): Promise<RDBMS> {
 export async function createMariaDB(url: string): Promise<RDBMS> {
   let conn = await createConnection(url);
 
+  const query = async (sql: string) => {
+    let result;
+    for (const stmt of splitStatements(sql)) {
+      result = await conn.query(stmt);
+    }
+    return result;
+  };
+
   return {
     engine: "MariaDB",
     clear: async () => {
@@ -99,7 +108,7 @@ export async function createMariaDB(url: string): Promise<RDBMS> {
     transaction: async (callback) => {
       await conn.beginTransaction();
       try {
-        const result = await callback((sql) => conn.query(sql));
+        const result = await callback(query);
         await conn.commit();
         return result;
       } catch (e) {
@@ -112,13 +121,7 @@ export async function createMariaDB(url: string): Promise<RDBMS> {
         await conn.execute(stmt);
       }
     },
-    query: async (sql) => {
-      let result;
-      for (const stmt of splitStatements(sql)) {
-        result = await conn.query(stmt);
-      }
-      return result;
-    },
+    query,
     dispose: async () => {
       await conn.end();
     },
