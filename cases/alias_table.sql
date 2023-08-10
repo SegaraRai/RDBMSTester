@@ -2,6 +2,10 @@
 CREATE TABLE tableA (id INT PRIMARY KEY);
 CREATE TABLE tableB (id INT PRIMARY KEY, ref_id INT REFERENCES tableA(id));
 
+--- @test mixed_select
+--- @expect error
+SELECT tableA.id FROM tableA a;
+
 --- @test aliased
 SELECT a.id FROM tableA a JOIN tableB b ON a.id = b.ref_id;
 

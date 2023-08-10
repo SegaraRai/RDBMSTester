@@ -9,7 +9,7 @@ async function runTest(database: RDBMS, test: Test): Promise<void> {
   await database.clear();
   await database.exec(test.setupSQL);
 
-  for (const { resetAfterRun, name, sql, expected } of test.cases) {
+  for (const { debug, resetAfterRun, name, sql, expected } of test.cases) {
     try {
       await database.transaction(async (query) => {
         let erred: boolean | Error = false;
@@ -18,6 +18,12 @@ async function runTest(database: RDBMS, test: Test): Promise<void> {
           result = await query(sql);
         } catch (e) {
           erred = e as Error;
+        }
+
+        if (debug) {
+          console.debug(`  [DEBUG] SQL: ${sql}`);
+          console.debug(`  [DEBUG] Expected: ${JSON.stringify(expected)}`);
+          console.debug(`  [DEBUG] Actual: ${JSON.stringify(result)}`);
         }
 
         const ok =
